@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 import rasterio as rio
 
-from image_similarity_measures.quality_metrics import metric_functions
+from image_similarity_measures_library.image_similarity_measures.quality_metrics import metric_functions
 
 logger = logging.getLogger(__name__)
 
