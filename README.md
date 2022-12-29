@@ -11,66 +11,12 @@ Implementation of eight evaluation metrics to access the similarity between two 
  * <i><a href="https://ntrs.nasa.gov/citations/19940012238">Spectral angle mapper (SAM)</a></i>, and
  * <i><a href="https://ece.uwaterloo.ca/~z70wang/publications/quality_2c.pdf">Universal image quality index (UIQ)</a></i>
 
-## Instructions
-
-The following step-by-step instructions will guide you through installing this package and run evaluation using the command line tool.
-
-**Note:** Supported python versions are 3.6, 3.7, 3.8, and 3.9.
-
-### Install package
-
-```bash
-pip install image-similarity-measures
-```
-
-For faster evaluation of the FSIM metric, the `pyfftw` package is required.
-You can install it separately, or via the `speedups` extra:
-
-```bash
-pip install image-similarity-measures[speedups]
-```
-
-You may also install the `rasterio` package to allow the CLI tool to use it for reading TIFF
-images instead of OpenCV. It, too, is available as an extra:
-
-
-```bash
-pip install image-similarity-measures[rasterio]
-```
-
-
-### Usage
-
-#### Parameters
-```
-  --org_img_path FILE   Path to original input image
-  --pred_img_path FILE  Path to predicted image
-  --metric METRIC       select an evaluation metric (fsim, issm, psnr, rmse,
-                        sam, sre, ssim, uiq, all) (can be repeated)
-```
-
-#### Evaluation
-For doing the evaluation, you can easily run the following command:
-
-```bash
-image-similarity-measures --org_img_path=a.tif --pred_img_path=b.tif
-```
-The results are printed in machine-readable JSON, so you can redirect the output of the command into a file.
-
-**Note** that images that are used for evaluation should be **channel last**.
-
-#### Usage in python
-```bash
-import image_similarity_measures
-from image_similarity_measures.quality_metrics import rmse, psnr
-```
-
 ### Install package from source
 
 #### Clone the repository
 
 ```bash
-git clone https://github.com/up42/image-similarity-measures.git
+git clone https://github.com/chief-zach/image-similarity-measures-library.git
 cd image-similarity-measures
 ```
 
