@@ -1,8 +1,7 @@
 """
 This module is a collection of metrics to assess the similarity between two images.
-Currently implemented metrics are FSIM, ISSM, PSNR, RMSE, SAM, SRE, SSIM, UIQ.
+PSNR, SSIM, FSIM and ISSM are the current metrics that are implemented in this module.
 """
-
 import math
 
 import numpy as np
@@ -12,19 +11,12 @@ import cv2
 
 
 def _assert_image_shapes_equal(org_img: np.ndarray, pred_img: np.ndarray, metric: str):
-    # shape of the image should be like this (rows, cols, bands)
-    # Please note that: The interpretation of a 3-dimension array read from rasterio is: (bands, rows, columns) while
-    # image processing software like scikit-image, pillow and matplotlib are generally ordered: (rows, columns, bands)
-    # in order efficiently swap the axis order one can use reshape_as_raster, reshape_as_image from rasterio.plot
-    msg = (
-        f"Cannot calculate {metric}. Input shapes not identical. y_true shape ="
-        f"{str(org_img.shape)}, y_pred shape = {str(pred_img.shape)}"
-    )
+    msg = (f"Cannot calculate {metric}. Input shapes not identical. y_true shape ="
+           f"{str(org_img.shape)}, y_pred shape = {str(pred_img.shape)}")
 
     assert org_img.shape == pred_img.shape, msg
 
-
-def rmse(org_img: np.ndarray, pred_img: np.ndarray, max_p: int = 4095) -> float:
+def rmse(org_img: np.ndarray, pred_img: np.ndarray, max_p=4095) -> float:
     """
     Root Mean Squared Error
 
@@ -32,17 +24,19 @@ def rmse(org_img: np.ndarray, pred_img: np.ndarray, max_p: int = 4095) -> float:
     """
     _assert_image_shapes_equal(org_img, pred_img, "RMSE")
 
+    org_img = org_img.astype(np.float32)
+
     rmse_bands = []
     for i in range(org_img.shape[2]):
-        dif = np.subtract(org_img[:, :, i], pred_img[:, :, i])
-        m = np.mean(np.square(dif / max_p))
+        dif = np.subtract(org_img, pred_img)
+        m = np.mean(np.square( dif / max_p))
         s = np.sqrt(m)
         rmse_bands.append(s)
 
     return np.mean(rmse_bands)
 
 
-def psnr(org_img: np.ndarray, pred_img: np.ndarray, max_p: int = 4095) -> float:
+def psnr(org_img: np.ndarray, pred_img: np.ndarray, max_p=4095) -> float:
     """
     Peek Signal to Noise Ratio, implemented as mean squared error converted to dB.
 
@@ -54,14 +48,16 @@ def psnr(org_img: np.ndarray, pred_img: np.ndarray, max_p: int = 4095) -> float:
     """
     _assert_image_shapes_equal(org_img, pred_img, "PSNR")
 
+    org_img = org_img.astype(np.float32)
+
     mse_bands = []
     for i in range(org_img.shape[2]):
         mse_bands.append(np.mean(np.square(org_img[:, :, i] - pred_img[:, :, i])))
 
-    return 20 * np.log10(max_p) - 10.0 * np.log10(np.mean(mse_bands))
+    return 20 * np.log10(max_p) - 10. * np.log10(np.mean(mse_bands))
 
 
-def _similarity_measure(x: np.array, y: np.array, constant: float):
+def _similarity_measure(x, y, constant):
     """
     Calculate feature similarity measurement between two images
     """
@@ -71,9 +67,9 @@ def _similarity_measure(x: np.array, y: np.array, constant: float):
     return numerator / denominator
 
 
-def _gradient_magnitude(img: np.ndarray, img_depth: int):
+def _gradient_magnitude(img: np.ndarray, img_depth):
     """
-    Calculate gradient magnitude based on Scharr operator.
+    Calculate gradient magnitude based on Scharr operator
     """
     scharrx = cv2.Scharr(img, img_depth, 1, 0)
     scharry = cv2.Scharr(img, img_depth, 0, 1)
@@ -81,9 +77,7 @@ def _gradient_magnitude(img: np.ndarray, img_depth: int):
     return np.sqrt(scharrx ** 2 + scharry ** 2)
 
 
-def fsim(
-    org_img: np.ndarray, pred_img: np.ndarray, T1: float = 0.85, T2: float = 160
-) -> float:
+def fsim(org_img: np.ndarray, pred_img: np.ndarray, T1=0.85, T2=160) -> float:
     """
     Feature-based similarity index, based on phase congruency (PC) and image gradient magnitude (GM)
 
@@ -109,26 +103,18 @@ def fsim(
     """
     _assert_image_shapes_equal(org_img, pred_img, "FSIM")
 
-    alpha = (
-        beta
-    ) = 1  # parameters used to adjust the relative importance of PC and GM features
+    alpha = beta = 1  # parameters used to adjust the relative importance of PC and GM features
     fsim_list = []
     for i in range(org_img.shape[2]):
         # Calculate the PC for original and predicted images
-        pc1_2dim = pc(
-            org_img[:, :, i], nscale=4, minWaveLength=6, mult=2, sigmaOnf=0.5978
-        )
-        pc2_2dim = pc(
-            pred_img[:, :, i], nscale=4, minWaveLength=6, mult=2, sigmaOnf=0.5978
-        )
+        pc1_2dim = pc(org_img[:, :, i], nscale=4, minWaveLength=6, mult=2, sigmaOnf=0.5978)
+        pc2_2dim = pc(pred_img[:, :, i], nscale=4, minWaveLength=6, mult=2, sigmaOnf=0.5978)
 
         # pc1_2dim and pc2_2dim are tuples with the length 7, we only need the 4th element which is the PC.
         # The PC itself is a list with the size of 6 (number of orientation). Therefore, we need to
         # calculate the sum of all these 6 arrays.
         pc1_2dim_sum = np.zeros((org_img.shape[0], org_img.shape[1]), dtype=np.float64)
-        pc2_2dim_sum = np.zeros(
-            (pred_img.shape[0], pred_img.shape[1]), dtype=np.float64
-        )
+        pc2_2dim_sum = np.zeros((pred_img.shape[0], pred_img.shape[1]), dtype=np.float64)
         for orientation in range(6):
             pc1_2dim_sum += pc1_2dim[4][orientation]
             pc2_2dim_sum += pc2_2dim[4][orientation]
@@ -151,7 +137,7 @@ def fsim(
     return np.mean(fsim_list)
 
 
-def _ehs(x: np.ndarray, y: np.ndarray):
+def _ehs(x, y):
     """
     Entropy-Histogram Similarity measure
     """
@@ -160,7 +146,7 @@ def _ehs(x: np.ndarray, y: np.ndarray):
     return -np.sum(np.nan_to_num(H * np.log2(H)))
 
 
-def _edge_c(x: np.ndarray, y: np.ndarray):
+def _edge_c(x, y):
     """
     Edge correlation coefficient based on Canny detector
     """
@@ -172,7 +158,7 @@ def _edge_c(x: np.ndarray, y: np.ndarray):
     h0 = np.mean(h)
 
     numerator = np.sum((g - g0) * (h - h0))
-    denominator = np.sqrt(np.sum(np.square(g - g0)) * np.sum(np.square(h - h0)))
+    denominator = np.sqrt(np.sum(np.square(g-g0)) * np.sum(np.square(h-h0)))
 
     return numerator / denominator
 
@@ -202,26 +188,24 @@ def issm(org_img: np.ndarray, pred_img: np.ndarray) -> float:
     return np.nan_to_num(numerator / denominator)
 
 
-def ssim(org_img: np.ndarray, pred_img: np.ndarray, max_p: int = 4095) -> float:
+def ssim(org_img: np.ndarray, pred_img: np.ndarray, max_p=4095) -> float:
     """
-    Structural Simularity Index
+    Structural SIMularity index
     """
     _assert_image_shapes_equal(org_img, pred_img, "SSIM")
 
     return structural_similarity(org_img, pred_img, data_range=max_p, multichannel=True)
 
 
-def sliding_window(image: np.ndarray, stepSize: int, windowSize: int):
+def sliding_window(image, stepSize, windowSize):
     # slide a window across the image
     for y in range(0, image.shape[0], stepSize):
         for x in range(0, image.shape[1], stepSize):
             # yield the current window
-            yield (x, y, image[y : y + windowSize[1], x : x + windowSize[0]])
+            yield (x, y, image[y:y + windowSize[1], x:x + windowSize[0]])
 
 
-def uiq(
-    org_img: np.ndarray, pred_img: np.ndarray, step_size: int = 1, window_size: int = 8
-):
+def uiq(org_img: np.ndarray, pred_img: np.ndarray, step_size=1, window_size=8):
     """
     Universal Image Quality index
     """
@@ -232,14 +216,10 @@ def uiq(
     pred_img = pred_img.astype(np.float32)
 
     q_all = []
-    for (x, y, window_org), (x, y, window_pred) in zip(
-        sliding_window(
-            org_img, stepSize=step_size, windowSize=(window_size, window_size)
-        ),
-        sliding_window(
-            pred_img, stepSize=step_size, windowSize=(window_size, window_size)
-        ),
-    ):
+    for (x, y, window_org), (x, y, window_pred) in zip(sliding_window(org_img, stepSize=step_size,
+                                                                      windowSize=(window_size, window_size)),
+                                                       sliding_window(pred_img, stepSize=step_size,
+                                                                      windowSize=(window_size, window_size))):
         # if the window does not meet our desired window size, ignore it
         if window_org.shape[0] != window_size or window_org.shape[1] != window_size:
             continue
@@ -251,32 +231,27 @@ def uiq(
             pred_band_mean = np.mean(pred_band)
             org_band_variance = np.var(org_band)
             pred_band_variance = np.var(pred_band)
-            org_pred_band_variance = np.mean(
-                (org_band - org_band_mean) * (pred_band - pred_band_mean)
-            )
+            org_pred_band_variance = np.mean((org_band - org_band_mean) * (pred_band - pred_band_mean))
 
             numerator = 4 * org_pred_band_variance * org_band_mean * pred_band_mean
-            denominator = (org_band_variance + pred_band_variance) * (
-                org_band_mean ** 2 + pred_band_mean ** 2
-            )
+            denominator = (org_band_variance + pred_band_variance) * (org_band_mean**2 + pred_band_mean**2)
 
             if denominator != 0.0:
                 q = numerator / denominator
                 q_all.append(q)
 
     if not np.any(q_all):
-        raise ValueError(
-            f"Window size ({window_size}) is too big for image with shape "
-            f"{org_img.shape[0:2]}, please use a smaller window size."
-        )
+        raise ValueError(f"Window size ({window_size}) is too big for image with shape "
+                         f"{org_img.shape[0:2]}, please use a smaller window size.")
 
     return np.mean(q_all)
 
 
-def sam(org_img: np.ndarray, pred_img: np.ndarray, convert_to_degree: bool = True):
+def sam(org_img: np.ndarray, pred_img: np.ndarray, convert_to_degree=True):
     """
     Spectral Angle Mapper which defines the spectral similarity between two spectra
     """
+
     _assert_image_shapes_equal(org_img, pred_img, "SAM")
 
     # Spectral angles are first computed for each pair of pixels
@@ -294,7 +269,7 @@ def sam(org_img: np.ndarray, pred_img: np.ndarray, convert_to_degree: bool = Tru
 
 def sre(org_img: np.ndarray, pred_img: np.ndarray):
     """
-    Signal to Reconstruction Error Ratio
+    signal to reconstruction error ratio
     """
     _assert_image_shapes_equal(org_img, pred_img, "SRE")
 
@@ -303,13 +278,11 @@ def sre(org_img: np.ndarray, pred_img: np.ndarray):
     sre_final = []
     for i in range(org_img.shape[2]):
         numerator = np.square(np.mean(org_img[:, :, i]))
-        denominator = (np.linalg.norm(org_img[:, :, i] - pred_img[:, :, i])) / (
-            org_img.shape[0] * org_img.shape[1]
-        )
-        sre_final.append(numerator / denominator)
+        denominator = (np.linalg.norm(org_img[:, :, i] - pred_img[:, :, i])) /\
+                      (org_img.shape[0] * org_img.shape[1])
+        sre_final.append(numerator/denominator)
 
     return 10 * np.log10(np.mean(sre_final))
-
 
 metric_functions = {
     "fsim": fsim,
