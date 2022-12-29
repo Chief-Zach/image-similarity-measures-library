@@ -17,35 +17,6 @@ Implementation of eight evaluation metrics to access the similarity between two 
 
 ```bash
 git clone https://github.com/chief-zach/image-similarity-measures-library.git
-cd image-similarity-measures
 ```
-
-Then navigate to the folder via `cd image-similarity-measures`.
-
-#### Installing the required libraries
-
-First create a new virtual environment called `similarity-measures`, for example by using
-[virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/):
-
-```bash
-mkvirtualenv --python=$(which python3.7) similarity-measures
-```
-
-Activate the new environment:
-
-```bash
-workon similarity-measures
-```
-
-Install the necessary Python libraries via:
-
-```bash
-bash setup.sh
-```
-
-## Citation
-Please use the following for citation purposes of this codebase:
-
-<strong>Müller, M. U., Ekhtiari, N., Almeida, R. M., and Rieke, C.: SUPER-RESOLUTION OF MULTISPECTRAL
-SATELLITE IMAGES USING CONVOLUTIONAL NEURAL NETWORKS, ISPRS Ann. Photogramm. Remote Sens.
-Spatial Inf. Sci., V-1-2020, 33–40, https://doi.org/10.5194/isprs-annals-V-1-2020-33-2020, 2020.</strong>
+## Credit 
+Credit to the original authors of the image-similarity-measures library that this repository was forked from. It can be found at https://pypi.org/project/image-similarity-measures/ or by checked the repo where this is forked from.
