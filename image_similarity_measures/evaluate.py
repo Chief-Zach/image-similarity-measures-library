@@ -23,13 +23,14 @@ def evaluation(org_img_path, pred_img_path, metrics):
     output_dict = {}
     org_img = read_image(org_img_path)
     pred_img = read_image(pred_img_path)
-    if type(metrics) == list:
+    if len(metrics) > 1:
         for metric in metrics:
             metric_func = metric_functions[metric]
             out_value = float(metric_func(org_img, pred_img))
             logger.info(f"{metric.upper()} value is: {out_value}")
             output_dict[metric] = out_value
     else:
+        metrics = metrics[0]
         metric_func = metric_functions[metrics]
         out_value = float(metric_func(org_img, pred_img))
         logger.info(f"{metrics.upper()} value is: {out_value}")
