@@ -19,4 +19,4 @@ Implementation of eight evaluation metrics to access the similarity between two 
 git clone https://github.com/chief-zach/image-similarity-measures-library.git
 ```
 ## Credit 
-Credit to the original authors of the image-similarity-measures library that this repository was forked from. It can be found at https://pypi.org/project/image-similarity-measures/ or by checked the repo where this is forked from.
+Credit to the original authors of the image-similarity-measures library that this repository was forked from. It can be found at https://pypi.org/project/image-similarity-measures/ or by checking the forks.
